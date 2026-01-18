@@ -580,7 +580,7 @@ export interface Database {
       tab_history: {
         Row: {
           id: string;
-          type: "initial" | "add" | "expense_approved" | "expense_rejected";
+          type: "initial" | "add" | "expense_approved" | "expense_rejected" | "adjustment";
           amount: number;
           description: string | null;
           related_expense_id: string | null;
@@ -589,7 +589,7 @@ export interface Database {
         };
         Insert: {
           id?: string;
-          type: "initial" | "add" | "expense_approved" | "expense_rejected";
+          type: "initial" | "add" | "expense_approved" | "expense_rejected" | "adjustment";
           amount: number;
           description?: string | null;
           related_expense_id?: string | null;
@@ -598,7 +598,7 @@ export interface Database {
         };
         Update: {
           id?: string;
-          type?: "initial" | "add" | "expense_approved" | "expense_rejected";
+          type?: "initial" | "add" | "expense_approved" | "expense_rejected" | "adjustment";
           amount?: number;
           description?: string | null;
           related_expense_id?: string | null;
