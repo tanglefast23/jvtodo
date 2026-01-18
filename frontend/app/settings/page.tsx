@@ -193,11 +193,11 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
+        {/* User Accounts & Permissions - visible to all, editable by admins */}
+        <PermissionsSettings />
+
         {/* Owner Profiles - Master Only */}
         {showOwnerManagement && <OwnerManagement />}
-
-        {/* User Permissions - Master Only */}
-        {showOwnerManagement && <PermissionsSettings />}
 
         {/* Danger Zone */}
         <Card className="border-destructive">

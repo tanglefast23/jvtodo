@@ -9,9 +9,8 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 export function createClient() {
   if (!supabaseUrl || !supabaseAnonKey) {
-    throw new Error(
-      `Missing Supabase environment variables. URL: ${supabaseUrl ? "set" : "missing"}, Key: ${supabaseAnonKey ? "set" : "missing"}`
-    );
+    // Return null if Supabase is not configured - app works in local-only mode
+    return null;
   }
   return createBrowserClient<Database>(supabaseUrl, supabaseAnonKey);
 }

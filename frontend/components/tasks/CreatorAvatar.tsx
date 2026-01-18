@@ -21,6 +21,7 @@ const PROFILE_PICTURES: Record<string, string> = {
   cliff: "/cliff.png",
   foad: "/foad.png",
   leonard: "/leonard.png",
+  thanh: "/thanh.png",
 };
 
 interface CreatorAvatarProps {

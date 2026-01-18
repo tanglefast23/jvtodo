@@ -13,11 +13,16 @@ export function PermissionsSettings() {
   const owners = useOwnerStore((state) => state.owners);
   const setOwnerMaster = useOwnerStore((state) => state.setOwnerMaster);
   const getActiveOwnerId = useOwnerStore((state) => state.getActiveOwnerId);
+  const isMasterLoggedIn = useOwnerStore((state) => state.isMasterLoggedIn);
   const permissions = usePermissionsStore((state) => state.permissions);
   const setCanApproveExpenses = usePermissionsStore((state) => state.setCanApproveExpenses);
   const initializePermissions = usePermissionsStore((state) => state.initializePermissions);
 
   const currentUserId = getActiveOwnerId();
+  const isAdmin = isMasterLoggedIn();
+
+  // Check if there are any admins at all (bootstrap case)
+  const hasAnyAdmin = owners.some((owner) => owner.isMaster);
 
   // Ensure permissions exist for all non-master users
   owners.forEach((owner) => {
@@ -44,7 +49,13 @@ export function PermissionsSettings() {
       <CardHeader>
         <CardTitle>User Accounts & Permissions</CardTitle>
         <CardDescription>
-          View all accounts and configure permissions. Admins have full access to all features.
+          {!hasAnyAdmin ? (
+            <span className="text-amber-600 dark:text-amber-400">
+              No admins exist. Toggle admin privileges on any account to bootstrap.
+            </span>
+          ) : (
+            "View all accounts and configure permissions. Admins have full access to all features."
+          )}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -95,7 +106,10 @@ export function PermissionsSettings() {
                     id={`admin-${owner.id}`}
                     checked={owner.isMaster}
                     onCheckedChange={(checked) => setOwnerMaster(owner.id, checked)}
-                    disabled={isCurrentUser}
+                    disabled={
+                      // Can toggle if: (isAdmin AND not self) OR (no admins exist - bootstrap)
+                      !(isAdmin && !isCurrentUser) && hasAnyAdmin
+                    }
                   />
                 </div>
 

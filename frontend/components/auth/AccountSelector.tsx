@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
-import Image from "next/image";
 import { ShieldCheck, Eye, EyeOff, Loader2, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,6 +26,7 @@ const PROFILE_PICTURES: Record<string, string> = {
   foad: "/foad.png",
   ivy: "/ivy.png",
   leonard: "/leonard.png",
+  thanh: "/thanh.png",
 };
 
 // Get profile picture path for a name, or null if not found
@@ -351,12 +351,10 @@ export function AccountSelector({ onLoginSuccess }: AccountSelectorProps) {
                 transform: `rotate(${pos.rotate}deg)`,
               }}
             >
-              <Image
+              <img
                 src={src}
                 alt=""
-                fill
-                className="object-cover object-[center_20%]"
-                sizes="30vmin"
+                className="w-full h-full object-cover object-[center_20%]"
               />
             </div>
           );
@@ -391,13 +389,10 @@ export function AccountSelector({ onLoginSuccess }: AccountSelectorProps) {
                 )}
               >
                 {profilePic ? (
-                  <Image
+                  <img
                     src={profilePic}
-                    alt={`Profile picture of ${owner.name}`}
-                    fill
-                    className="object-cover object-[center_20%]"
-                    sizes="96px"
-                    priority
+                    alt={owner.name}
+                    className="w-full h-full object-cover object-[center_20%]"
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-white text-2xl font-bold">
@@ -451,15 +446,11 @@ export function AccountSelector({ onLoginSuccess }: AccountSelectorProps) {
                     const profilePic = getProfilePicture(selectedOwner.name);
                     const colorIndex = sortedOwners.findIndex((o) => o.id === selectedOwner.id);
                     return profilePic ? (
-                      <div className="relative w-10 h-10 rounded-full overflow-hidden">
-                        <Image
-                          src={profilePic}
-                          alt={`Profile picture of ${selectedOwner.name}`}
-                          fill
-                          className="object-cover object-[center_20%]"
-                          sizes="40px"
-                        />
-                      </div>
+                      <img
+                        src={profilePic}
+                        alt={selectedOwner.name}
+                        className="w-10 h-10 rounded-full object-cover object-[center_20%]"
+                      />
                     ) : (
                       <div
                         className={cn(
