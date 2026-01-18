@@ -57,12 +57,7 @@ const AVATAR_COLORS = [
   { bg: "bg-orange-500", text: "text-white" },
 ];
 
-interface HeaderProps {
-  onRefresh?: () => void;
-  isRefreshing?: boolean;
-}
-
-export function Header({ onRefresh, isRefreshing }: HeaderProps) {
+export function Header() {
   const { setTheme } = useTheme();
   const router = useRouter();
   const pathname = usePathname();
@@ -157,23 +152,19 @@ export function Header({ onRefresh, isRefreshing }: HeaderProps) {
 
       {/* Right: Controls */}
       <div className="flex-1 flex items-center justify-end gap-2">
-        {/* Refresh Button - using native title to avoid Radix tooltip cascade issues */}
-        {/* Use isMounted to defer isRefreshing state and prevent hydration mismatch */}
-        {onRefresh && (
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onRefresh}
-            disabled={isMounted && isRefreshing}
-            className="group"
-            title="Refresh data"
-          >
-            <RefreshCw
-              className={`h-5 w-5 transition-transform duration-500 ${isMounted && isRefreshing ? "animate-spin" : "group-hover:rotate-180"}`}
-            />
-            <span className="sr-only">Refresh data</span>
-          </Button>
-        )}
+        {/* Page Refresh Button */}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => window.location.reload()}
+          className="group"
+          title="Refresh page"
+        >
+          <RefreshCw
+            className="h-5 w-5 transition-transform duration-500 group-hover:rotate-180"
+          />
+          <span className="sr-only">Refresh page</span>
+        </Button>
 
         {/* Mobile/Desktop Toggle */}
         <MobileToggle size="sm" />
