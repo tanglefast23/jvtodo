@@ -65,7 +65,7 @@ export function AddExpenseModal({
     try {
       const entries = parseBulkInput(bulkText);
       if (entries.length === 0) {
-        setBulkError("No valid entries found. Use format: Name, Amount, Name, Amount, ...");
+        setBulkError("No valid entries found. Use format: name amount, name amount, ...");
         return;
       }
       onAddBulkExpenses(entries);
@@ -227,14 +227,14 @@ export function AddExpenseModal({
               <div>
                 <label className="text-sm font-medium">Bulk Entry</label>
                 <p className="text-xs text-muted-foreground mb-2">
-                  Format: Name, Amount, Name, Amount, ...
+                  Format: name amount, name amount, ...
                 </p>
                 <textarea
                   ref={bulkTextareaRef}
                   value={bulkText}
                   onChange={(e) => setBulkText(e.target.value)}
                   onKeyDown={handleBulkKeyDown}
-                  placeholder="Coffee, 50000, Lunch, 120000, Snacks, 30000"
+                  placeholder="coffee 50000, lunch 120000, snacks 30000"
                   className="flex min-h-[120px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                 />
                 {bulkError && (
