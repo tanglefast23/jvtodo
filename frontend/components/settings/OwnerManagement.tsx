@@ -9,9 +9,9 @@ import {
   ShieldCheck,
   Eye,
   EyeOff,
-  Lock,
-  LockOpen,
+  Key,
   Users,
+  User,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,11 +44,6 @@ export function OwnerManagement() {
     setOwnerMaster,
     changeOwnerPassword,
     setOwnerPassword,
-    isOwnerUnlocked,
-    unlockOwner,
-    lockOwner,
-    lockAllOwners,
-    checkRateLimit,
   } = useOwnerStore();
 
   // Add owner dialog state
@@ -75,12 +70,6 @@ export function OwnerManagement() {
   // Edit name state
   const [editingOwner, setEditingOwner] = useState<{ id: string; name: string } | null>(null);
   const [editName, setEditName] = useState("");
-
-  // Unlock owner dialog state
-  const [unlockOwnerTarget, setUnlockOwnerTarget] = useState<{ id: string; name: string } | null>(null);
-  const [unlockPassword, setUnlockPassword] = useState("");
-  const [showUnlockPassword, setShowUnlockPassword] = useState(false);
-  const [unlockError, setUnlockError] = useState<string | null>(null);
 
   // Promote to admin dialog state (for passwordless users)
   const [promoteOwnerTarget, setPromoteOwnerTarget] = useState<{ id: string; name: string } | null>(null);
@@ -168,41 +157,6 @@ export function OwnerManagement() {
     setEditName("");
   }, [editingOwner, editName, updateOwnerName]);
 
-  const handleUnlockOwner = useCallback(async () => {
-    if (!unlockOwnerTarget) return;
-
-    // Check rate limit before attempting unlock
-    const lockStatus = checkRateLimit(unlockOwnerTarget.id);
-    if (lockStatus.locked) {
-      const seconds = Math.ceil(lockStatus.remainingMs / 1000);
-      setUnlockError(`Too many failed attempts. Try again in ${seconds} seconds.`);
-      return;
-    }
-
-    if (!unlockPassword.trim()) {
-      setUnlockError("Please enter the password");
-      return;
-    }
-
-    const success = await unlockOwner(unlockOwnerTarget.id, unlockPassword);
-    if (!success) {
-      // Check if now locked out after failed attempt
-      const newLockStatus = checkRateLimit(unlockOwnerTarget.id);
-      if (newLockStatus.locked) {
-        setUnlockError("Too many failed attempts. Account locked for 1 minute.");
-      } else {
-        setUnlockError("Incorrect password");
-      }
-      return;
-    }
-
-    // Reset form
-    setUnlockPassword("");
-    setShowUnlockPassword(false);
-    setUnlockError(null);
-    setUnlockOwnerTarget(null);
-  }, [unlockOwnerTarget, unlockPassword, unlockOwner, checkRateLimit]);
-
   const handleMasterToggle = useCallback((owner: { id: string; name: string; isMaster?: boolean; passwordHash?: string }) => {
     if (owner.isMaster) {
       // Demoting from admin - no password needed
@@ -259,105 +213,58 @@ export function OwnerManagement() {
           Owner Profiles
         </CardTitle>
         <CardDescription>
-          Manage owner profiles for the app. Each owner has a password to protect their session.
+          Manage owner profiles and passwords.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Security Notice */}
-        <div className="rounded-lg bg-muted/50 p-3 text-sm text-muted-foreground">
-          <p className="font-medium text-foreground">Security Note</p>
-          <p>
-            This is convenience security for shared devices.
-            Unlock state clears when the browser is fully closed.
-          </p>
-        </div>
-
         {/* Owner List */}
         {owners.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
-            <Lock className="h-12 w-12 mx-auto mb-3 opacity-50" />
+            <Users className="h-12 w-12 mx-auto mb-3 opacity-50" />
             <p>No owner profiles yet</p>
-            <p className="text-sm">Create an owner to set up password protection</p>
+            <p className="text-sm">Create an owner profile</p>
           </div>
         ) : (
           <div className="space-y-2">
-            {owners.map((owner) => {
-              const isUnlocked = isOwnerUnlocked(owner.id);
-
-              return (
-                <div
-                  key={owner.id}
-                  className={cn(
-                    "rounded-xl border transition-all duration-200 p-4",
-                    isUnlocked ? "bg-green-500/5 border-green-500/20" : "bg-muted/20 border-border/50"
-                  )}
-                >
-                  <div className="flex items-center justify-between">
-                    {/* Owner Info */}
-                    <div className="flex items-center gap-3">
-                      {owner.isMaster ? (
-                        <ShieldCheck className="h-5 w-5 text-amber-500" />
-                      ) : isUnlocked ? (
-                        <LockOpen className="h-5 w-5 text-green-500" />
+            {owners.map((owner) => (
+              <div
+                key={owner.id}
+                className="rounded-xl border transition-all duration-200 p-4 bg-muted/20 border-border/50"
+              >
+                <div className="flex items-center justify-between">
+                  {/* Owner Info */}
+                  <div className="flex items-center gap-3">
+                    {owner.isMaster ? (
+                      <ShieldCheck className="h-5 w-5 text-amber-500" />
+                    ) : (
+                      <User className="h-5 w-5 text-muted-foreground" />
+                    )}
+                    <div>
+                      {editingOwner?.id === owner.id ? (
+                        <Input
+                          value={editName}
+                          onChange={(e) => setEditName(e.target.value)}
+                          onKeyDown={(e) => e.key === "Enter" && handleSaveEditName()}
+                          onBlur={handleSaveEditName}
+                          autoFocus
+                          className="h-7 w-40"
+                        />
                       ) : (
-                        <Lock className="h-5 w-5 text-muted-foreground" />
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold">{owner.name}</span>
+                          {owner.isMaster && (
+                            <span className="text-[10px] bg-amber-500/20 text-amber-600 dark:text-amber-400 px-1.5 py-0.5 rounded-full font-medium">
+                              Master
+                            </span>
+                          )}
+                        </div>
                       )}
-                      <div>
-                        {editingOwner?.id === owner.id ? (
-                          <Input
-                            value={editName}
-                            onChange={(e) => setEditName(e.target.value)}
-                            onKeyDown={(e) => e.key === "Enter" && handleSaveEditName()}
-                            onBlur={handleSaveEditName}
-                            autoFocus
-                            className="h-7 w-40"
-                          />
-                        ) : (
-                          <div className="flex items-center gap-2">
-                            <span className="font-semibold">{owner.name}</span>
-                            {owner.isMaster && (
-                              <span className="text-[10px] bg-amber-500/20 text-amber-600 dark:text-amber-400 px-1.5 py-0.5 rounded-full font-medium">
-                                Master
-                              </span>
-                            )}
-                          </div>
-                        )}
-                        <p className="text-xs text-muted-foreground">
-                          {isUnlocked ? "Unlocked" : "Locked"}
-                        </p>
-                      </div>
                     </div>
+                  </div>
 
-                    {/* Action Buttons */}
-                    <div className="flex items-center gap-1">
-                      {/* Lock/Unlock Button */}
-                      {isUnlocked ? (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => lockOwner(owner.id)}
-                          title="Lock"
-                          className="h-8 w-8 p-0"
-                        >
-                          <Lock className="h-4 w-4" />
-                        </Button>
-                      ) : (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setUnlockOwnerTarget({ id: owner.id, name: owner.name });
-                            setUnlockPassword("");
-                            setUnlockError(null);
-                          }}
-                          title="Unlock"
-                          className="h-8 w-8 p-0"
-                        >
-                          <LockOpen className="h-4 w-4" />
-                        </Button>
-                      )}
-
-                      {/* Master Toggle */}
+                  {/* Action Buttons */}
+                  <div className="flex items-center gap-1">
+                    {/* Master Toggle */}
                       <Button
                         variant="ghost"
                         size="sm"
@@ -394,7 +301,7 @@ export function OwnerManagement() {
                         title="Change password"
                         className="h-8 w-8 p-0"
                       >
-                        <Lock className="h-4 w-4" />
+                        <Key className="h-4 w-4" />
                       </Button>
 
                       {/* Delete */}
@@ -410,8 +317,7 @@ export function OwnerManagement() {
                     </div>
                   </div>
                 </div>
-              );
-            })}
+            ))}
           </div>
         )}
 
@@ -421,12 +327,6 @@ export function OwnerManagement() {
             <Plus className="h-4 w-4 mr-2" />
             Add Owner
           </Button>
-          {owners.length > 0 && (
-            <Button variant="outline" onClick={lockAllOwners}>
-              <Lock className="h-4 w-4 mr-2" />
-              Lock All
-            </Button>
-          )}
         </div>
 
         {/* Add Owner Dialog */}
@@ -636,72 +536,6 @@ export function OwnerManagement() {
                 onClick={() => deleteConfirmOwner && handleDeleteOwner(deleteConfirmOwner.id)}
               >
                 Delete Owner
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
-        {/* Unlock Owner Password Dialog */}
-        <Dialog open={!!unlockOwnerTarget} onOpenChange={(open) => {
-          if (!open) {
-            setUnlockOwnerTarget(null);
-            setUnlockPassword("");
-            setUnlockError(null);
-            setShowUnlockPassword(false);
-          }
-        }}>
-          <DialogContent className="sm:max-w-[400px]">
-            <DialogHeader>
-              <DialogTitle>Unlock {unlockOwnerTarget?.name}</DialogTitle>
-              <DialogDescription>
-                Enter the password to unlock this owner&apos;s session.
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="unlock-password">Password</Label>
-                <div className="relative">
-                  <Input
-                    id="unlock-password"
-                    type={showUnlockPassword ? "text" : "password"}
-                    value={unlockPassword}
-                    onChange={(e) => {
-                      setUnlockPassword(e.target.value);
-                      setUnlockError(null);
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        handleUnlockOwner();
-                      }
-                    }}
-                    placeholder="Enter password"
-                    autoFocus
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowUnlockPassword(!showUnlockPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                    tabIndex={-1}
-                    aria-label={showUnlockPassword ? "Hide password" : "Show password"}
-                  >
-                    {showUnlockPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
-                </div>
-              </div>
-
-              {unlockError && (
-                <p className="text-sm text-destructive">{unlockError}</p>
-              )}
-            </div>
-
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setUnlockOwnerTarget(null)}>
-                Cancel
-              </Button>
-              <Button onClick={handleUnlockOwner}>
-                Unlock
               </Button>
             </DialogFooter>
           </DialogContent>
