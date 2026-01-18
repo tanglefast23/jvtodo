@@ -1,6 +1,7 @@
 "use client";
 
-import { Check, X, Image as ImageIcon } from "lucide-react";
+import { useState } from "react";
+import { Check, X, FileText, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatVND } from "./BalanceDisplay";
@@ -64,9 +65,13 @@ export function ExpenseItem({
   itemNumber,
   showNumber = false,
 }: ExpenseItemProps) {
+  const [imageError, setImageError] = useState(false);
   const config = statusConfig[expense.status];
   const isPending = expense.status === "pending";
   const numberColor = itemNumber ? NUMBER_COLORS[(itemNumber - 1) % NUMBER_COLORS.length] : NUMBER_COLORS[0];
+
+  // Check if attachment is a PDF
+  const isPdf = expense.attachmentUrl?.toLowerCase().includes(".pdf");
 
   // Get card style based on status
   const getCardStyle = () => {
@@ -129,17 +134,42 @@ export function ExpenseItem({
           </div>
         )}
 
-        {/* Attachment Preview */}
+        {/* Attachment Thumbnail */}
         {expense.attachmentUrl && (
           <div className="mt-3">
             <a
               href={expense.attachmentUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 text-sm text-primary hover:underline"
+              className="group inline-block"
             >
-              <ImageIcon className="h-4 w-4" />
-              View Attachment
+              {isPdf || imageError ? (
+                // PDF or failed image - show icon with link
+                <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary/10 hover:bg-primary/20 transition-colors">
+                  <FileText className="h-8 w-8 text-primary" />
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium text-primary">
+                      {isPdf ? "PDF Document" : "Attachment"}
+                    </span>
+                    <span className="text-xs text-muted-foreground flex items-center gap-1">
+                      Tap to view <ExternalLink className="h-3 w-3" />
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                // Image - show thumbnail
+                <div className="relative overflow-hidden rounded-lg border-2 border-primary/20 hover:border-primary/40 transition-colors">
+                  <img
+                    src={expense.attachmentUrl}
+                    alt="Expense attachment"
+                    className="w-20 h-20 object-cover group-hover:scale-105 transition-transform"
+                    onError={() => setImageError(true)}
+                  />
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
+                    <ExternalLink className="h-5 w-5 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-lg" />
+                  </div>
+                </div>
+              )}
             </a>
           </div>
         )}
