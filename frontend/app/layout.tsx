@@ -23,8 +23,8 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Moonfolio",
-  description: "Track your stocks and crypto portfolio to the moon",
+  title: "Thanh To Do",
+  description: "Manage tasks and track expenses together",
 };
 
 export default function RootLayout({

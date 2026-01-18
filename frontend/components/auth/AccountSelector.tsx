@@ -334,7 +334,7 @@ export function AccountSelector({ onLoginSuccess }: AccountSelectorProps) {
           const isLeonard = name === "leonard";
           const imageSize = isLeonard ? baseSize * 1.4 : baseSize; // 25.2vmin for Leonard
           // Positions calculated so imageSize + position always < 100% in both dimensions
-          // Leonard is centered behind the Moonfolio logo
+          // Leonard is centered behind the logo
           const positions = [
             { top: 5, left: 5, rotate: -15 },      // Top-left (joe)
             { top: 60, left: 8, rotate: 12 },      // Bottom-left (cliff)
@@ -367,7 +367,7 @@ export function AccountSelector({ onLoginSuccess }: AccountSelectorProps) {
 
       {/* Main content */}
       <div className="relative z-10 flex flex-col items-center">
-        {/* Moonfolio Logo - prominent display */}
+        {/* App Logo - prominent display */}
         <div className="mb-6 transform scale-[3.75] md:scale-[5]">
           <Logo size="lg" />
         </div>
