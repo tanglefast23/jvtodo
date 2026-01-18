@@ -94,6 +94,29 @@ export function useSupabaseSync(): void {
     };
   }, []);
 
+  // Re-fetch data when tab becomes visible (user switches back to app or device)
+  // This enables cross-device sync without requiring manual refresh
+  useEffect(() => {
+    const handleVisibilityChange = async () => {
+      if (document.visibilityState === "visible" && initialLoadComplete.current) {
+        console.log("[Sync] Tab visible - refreshing data from cloud...");
+        isInitialLoad.current = true;
+        try {
+          await performInitialLoad();
+        } catch (error) {
+          console.error("[Sync] Visibility refresh failed:", error);
+        } finally {
+          isInitialLoad.current = false;
+        }
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, []);
+
   // Sync tasks when they change
   useEffect(() => {
     if (!initialLoadComplete.current) return;
