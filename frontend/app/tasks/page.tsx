@@ -23,6 +23,7 @@ export default function TasksPage() {
   // Owner state
   const owners = useOwnerStore((state) => state.owners);
   const getActiveOwnerId = useOwnerStore((state) => state.getActiveOwnerId);
+  const isMasterLoggedIn = useOwnerStore((state) => state.isMasterLoggedIn);
 
   // Hydration-safe
   const [isMounted, setIsMounted] = useState(false);
@@ -31,6 +32,7 @@ export default function TasksPage() {
   }, []);
 
   const activeOwnerId = isMounted ? getActiveOwnerId() : null;
+  const isMaster = isMounted ? isMasterLoggedIn() : false;
 
   // Get owner name by ID
   const getOwnerName = useCallback((ownerId: string | null): string | undefined => {
@@ -76,12 +78,7 @@ export default function TasksPage() {
 
       <main className="flex-1 p-6">
         <div className="max-w-3xl mx-auto space-y-6">
-          <div>
-            <h1 className="text-2xl font-bold">Tasks</h1>
-            <p className="text-muted-foreground">
-              Manage your to-do items and track progress
-            </p>
-          </div>
+          <h1 className="text-2xl font-bold">Tasks</h1>
 
           {/* Add Task Form */}
           <AddTaskForm
@@ -97,6 +94,7 @@ export default function TasksPage() {
             onUncomplete={handleUncomplete}
             onDelete={handleDelete}
             canComplete={true}
+            canDelete={isMaster}
           />
         </div>
       </main>

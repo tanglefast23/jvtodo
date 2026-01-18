@@ -39,16 +39,17 @@ const statusConfig: Record<
   pending: {
     label: "Pending",
     variant: "outline",
-    className: "border-yellow-500 text-yellow-600 dark:text-yellow-400",
+    className: "border-amber-400 text-amber-500 bg-amber-500/10",
   },
   approved: {
     label: "Approved",
     variant: "default",
-    className: "bg-green-500 hover:bg-green-600",
+    className: "bg-gradient-to-r from-emerald-500 to-green-500 text-white border-0",
   },
   rejected: {
     label: "Rejected",
     variant: "destructive",
+    className: "bg-gradient-to-r from-red-500 to-rose-500 text-white border-0",
   },
 };
 
@@ -67,8 +68,20 @@ export function ExpenseItem({
   const isPending = expense.status === "pending";
   const numberColor = itemNumber ? NUMBER_COLORS[(itemNumber - 1) % NUMBER_COLORS.length] : NUMBER_COLORS[0];
 
+  // Get card style based on status
+  const getCardStyle = () => {
+    switch (expense.status) {
+      case "approved":
+        return "bg-gradient-to-r from-emerald-500/10 to-green-500/10 border-emerald-400/40";
+      case "rejected":
+        return "bg-gradient-to-r from-red-500/10 to-rose-500/10 border-red-400/40";
+      default:
+        return "bg-gradient-to-r from-amber-500/10 to-yellow-500/10 border-amber-400/40";
+    }
+  };
+
   return (
-    <div className="flex items-start gap-4 p-4 rounded-lg border bg-card">
+    <div className={`flex items-start gap-4 p-4 rounded-xl border-2 ${getCardStyle()}`}>
       {/* Item Number */}
       {showNumber && itemNumber && (
         <div
@@ -106,6 +119,15 @@ export function ExpenseItem({
             </>
           )}
         </div>
+
+        {/* Rejection Reason - only for rejected expenses */}
+        {expense.status === "rejected" && expense.rejectionReason && (
+          <div className="mt-2 px-3 py-2 rounded-md bg-red-500/10 border border-red-500/20">
+            <p className="text-sm text-red-600 dark:text-red-400">
+              <span className="font-medium">Reason:</span> {expense.rejectionReason}
+            </p>
+          </div>
+        )}
 
         {/* Attachment Preview */}
         {expense.attachmentUrl && (

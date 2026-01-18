@@ -128,7 +128,7 @@ export function playSelectionChime(): void {
 }
 
 /**
- * Play triumphant sound and say "To the Moon!" - for successful login
+ * Play triumphant sound for successful login
  */
 export function playLoginSuccess(): void {
   const ctx = getAudioContext();
@@ -155,17 +155,6 @@ export function playLoginSuccess(): void {
       osc.start(noteStart);
       osc.stop(noteStart + 0.35);
     });
-
-    // Use Web Speech API to say "To the Moon!"
-    if ("speechSynthesis" in window) {
-      const utterance = new SpeechSynthesisUtterance("To the Moon!");
-      utterance.rate = 1.1;
-      utterance.pitch = 1.2;
-      utterance.volume = 0.8;
-      setTimeout(() => {
-        window.speechSynthesis.speak(utterance);
-      }, 300);
-    }
   } catch {
     // Audio not available
   }

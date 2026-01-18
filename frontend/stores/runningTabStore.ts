@@ -46,9 +46,10 @@ interface RunningTabState {
     createdBy: string | null
   ) => string[];
   approveExpense: (id: string, approvedBy: string | null) => void;
-  rejectExpense: (id: string, approvedBy: string | null) => void;
+  rejectExpense: (id: string, reason: string, approvedBy: string | null) => void;
   setAttachment: (expenseId: string, url: string) => void;
   deleteExpense: (id: string) => void;
+  clearCompletedExpenses: () => void;
 
   // Getters
   getTabBalance: () => number;
@@ -147,6 +148,7 @@ export const useRunningTabStore = create<RunningTabState>()(
           approvedAt: null,
           status: "pending",
           attachmentUrl: null,
+          rejectionReason: null,
           updatedAt: now,
         };
 
@@ -169,6 +171,7 @@ export const useRunningTabStore = create<RunningTabState>()(
           approvedAt: null,
           status: "pending" as ExpenseStatus,
           attachmentUrl: null,
+          rejectionReason: null,
           updatedAt: now,
         }));
 
@@ -229,14 +232,14 @@ export const useRunningTabStore = create<RunningTabState>()(
         }));
       },
 
-      rejectExpense: (id, approvedBy) => {
+      rejectExpense: (id, reason, approvedBy) => {
         const expense = get().expenses.find((e) => e.id === id);
         if (!expense || expense.status !== "pending") return;
 
         const now = new Date().toISOString();
         const historyId = generateId();
 
-        // Update expense status
+        // Update expense status with rejection reason
         set((state) => ({
           expenses: state.expenses.map((e) =>
             e.id === id
@@ -245,18 +248,19 @@ export const useRunningTabStore = create<RunningTabState>()(
                   status: "rejected" as const,
                   approvedBy,
                   approvedAt: now,
+                  rejectionReason: reason,
                   updatedAt: now,
                 }
               : e
           ),
         }));
 
-        // Add history entry
+        // Add history entry with reason
         const historyEntry: TabHistoryEntry = {
           id: historyId,
           type: "expense_rejected",
           amount: 0,
-          description: `Rejected: ${expense.name}`,
+          description: `Rejected: ${expense.name} - ${reason}`,
           relatedExpenseId: id,
           createdBy: approvedBy,
           createdAt: now,
@@ -289,6 +293,13 @@ export const useRunningTabStore = create<RunningTabState>()(
 
         set((state) => ({
           expenses: state.expenses.filter((e) => e.id !== id),
+        }));
+      },
+
+      clearCompletedExpenses: () => {
+        // Keep only pending expenses, remove approved and rejected
+        set((state) => ({
+          expenses: state.expenses.filter((e) => e.status === "pending"),
         }));
       },
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { X } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { CreatorAvatar } from "./CreatorAvatar";
@@ -16,6 +17,7 @@ interface TaskItemProps {
   onUncomplete: (id: string) => void;
   onDelete: (id: string) => void;
   canComplete: boolean;
+  canDelete?: boolean;
 }
 
 export function TaskItem({
@@ -26,6 +28,7 @@ export function TaskItem({
   onUncomplete,
   onDelete,
   canComplete,
+  canDelete = false,
 }: TaskItemProps) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const isCompleted = task.status === "completed";
@@ -63,11 +66,23 @@ export function TaskItem({
     setShowDeleteConfirm(true);
   };
 
+  // Determine card style based on priority and completion status
+  const getCardStyle = () => {
+    if (isCompleted) {
+      return "bg-gradient-to-r from-emerald-500/10 to-green-500/10 border-emerald-500/30";
+    }
+    if (task.priority === "urgent") {
+      return "bg-gradient-to-r from-orange-500/15 to-red-500/15 border-orange-400/40 hover:border-orange-400/60";
+    }
+    return "bg-gradient-to-r from-cyan-500/10 to-blue-500/10 border-cyan-400/30 hover:border-cyan-400/50";
+  };
+
   return (
     <div
       className={cn(
-        "flex items-center gap-3 p-3 rounded-lg border bg-card transition-all",
-        isCompleted && "opacity-60",
+        "relative flex items-center gap-3 p-4 rounded-xl border-2 transition-all",
+        getCardStyle(),
+        isCompleted && "opacity-70",
         showDeleteConfirm && "ring-2 ring-destructive"
       )}
       onTouchStart={handlePressStart}
@@ -77,11 +92,32 @@ export function TaskItem({
       onMouseLeave={handlePressEnd}
       onContextMenu={handleContextMenu}
     >
+      {/* Delete X button for completed tasks - admin only */}
+      {isCompleted && canDelete && !showDeleteConfirm && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete(task.id);
+          }}
+          className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center shadow-lg transition-all hover:scale-110"
+          title="Remove completed task"
+        >
+          <X className="w-4 h-4" />
+        </button>
+      )}
+
       <Checkbox
         checked={isCompleted}
         onCheckedChange={handleCheckChange}
         disabled={!canComplete}
-        className="h-5 w-5"
+        className={cn(
+          "h-5 w-5 border-2",
+          isCompleted
+            ? "border-emerald-500 data-[state=checked]:bg-emerald-500"
+            : task.priority === "urgent"
+              ? "border-orange-400"
+              : "border-cyan-400"
+        )}
       />
 
       <div className="flex-1 min-w-0">
@@ -90,7 +126,7 @@ export function TaskItem({
             {task.title}
           </span>
           {task.priority === "urgent" && (
-            <Badge variant="destructive" className="text-xs">
+            <Badge className="text-xs bg-gradient-to-r from-orange-500 to-red-500 text-white border-0 shadow-sm">
               Urgent
             </Badge>
           )}

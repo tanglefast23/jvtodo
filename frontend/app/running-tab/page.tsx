@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef } from "react";
-import { Pencil } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
 import { Header } from "@/components/layout/Header";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { useOwnerStore } from "@/stores/ownerStore";
@@ -50,12 +50,16 @@ export default function RunningTabPage() {
   const approveExpense = useRunningTabStore((state) => state.approveExpense);
   const rejectExpense = useRunningTabStore((state) => state.rejectExpense);
   const setAttachment = useRunningTabStore((state) => state.setAttachment);
+  const clearCompletedExpenses = useRunningTabStore((state) => state.clearCompletedExpenses);
 
   // Balance adjustment modal state (admin only)
   const [adjustModalOpen, setAdjustModalOpen] = useState(false);
   const [adjustAmount, setAdjustAmount] = useState("");
   const [adjustReason, setAdjustReason] = useState("");
   const adjustAmountRef = useRef<HTMLInputElement>(null);
+
+  // Clear all modal state (admin only)
+  const [clearAllModalOpen, setClearAllModalOpen] = useState(false);
 
   // Permissions
   const canApproveExpenses = usePermissionsStore((state) => state.canApproveExpenses);
@@ -88,8 +92,8 @@ export default function RunningTabPage() {
     approveExpense(id, activeOwnerId);
   };
 
-  const handleReject = (id: string) => {
-    rejectExpense(id, activeOwnerId);
+  const handleReject = (id: string, reason: string) => {
+    rejectExpense(id, reason, activeOwnerId);
   };
 
   const handleAttachment = (expenseId: string, url: string) => {
@@ -209,10 +213,55 @@ export default function RunningTabPage() {
 
               {/* Tab History */}
               <TabHistory history={history} owners={ownerList} />
+
+              {/* Clear All Button - Admin only, at the very bottom */}
+              {isMaster && (expenses.filter(e => e.status !== "pending").length > 0) && (
+                <div className="flex justify-center pt-8 pb-4">
+                  <Button
+                    variant="outline"
+                    className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950 border-red-300 dark:border-red-800"
+                    onClick={() => setClearAllModalOpen(true)}
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Clear Approved & Rejected
+                  </Button>
+                </div>
+              )}
             </>
           )}
         </div>
       </main>
+
+      {/* Clear All Confirmation Modal (Admin Only) */}
+      <Dialog open={clearAllModalOpen} onOpenChange={setClearAllModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Clear Completed Expenses</DialogTitle>
+            <DialogDescription>
+              This will permanently delete all approved and rejected expenses. Pending expenses will be kept. This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setClearAllModalOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={() => {
+                clearCompletedExpenses();
+                setClearAllModalOpen(false);
+              }}
+            >
+              Clear All
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Balance Adjustment Modal (Admin Only) */}
       <Dialog open={adjustModalOpen} onOpenChange={setAdjustModalOpen}>

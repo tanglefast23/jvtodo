@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LogOut, Moon, RefreshCw, Sun, User, ShieldCheck, Settings, Table2, Calculator } from "lucide-react";
@@ -23,11 +22,10 @@ import { useShallow } from "zustand/react/shallow";
 import { Logo } from "./Logo";
 import { cn } from "@/lib/utils";
 
-// Navigation items for the header
+// Navigation items for the header (Settings moved to right side as icon)
 const navItems = [
   { title: "Tasks", href: "/tasks", icon: Table2 },
   { title: "Running Tab", href: "/running-tab", icon: Calculator },
-  { title: "Settings", href: "/settings", icon: Settings },
 ];
 
 // Profile pictures for known users (case-insensitive match)
@@ -129,15 +127,14 @@ export function Header({ onRefresh, isRefreshing }: HeaderProps) {
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-background/95 px-6 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      {/* Left: Logo */}
-      <div className="flex items-center">
-        <Link href="/tasks">
+      {/* Left: Spacer for balance */}
+      <div className="flex-1" />
+
+      {/* Center: Logo + Navigation Links */}
+      <nav className="hidden md:flex items-center gap-4">
+        <Link href="/tasks" className="mr-2">
           <Logo size="md" />
         </Link>
-      </div>
-
-      {/* Center: Navigation Links */}
-      <nav className="hidden md:flex items-center gap-1">
         {navItems.map((item) => {
           const isActive = pathname === item.href;
           return (
@@ -145,10 +142,10 @@ export function Header({ onRefresh, isRefreshing }: HeaderProps) {
               key={item.href}
               href={item.href}
               className={cn(
-                "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors",
+                "flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all",
                 isActive
-                  ? "bg-primary/10 text-primary"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  ? "bg-gradient-to-r from-violet-500/20 to-purple-500/20 text-violet-400 border border-violet-400/30"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
               )}
             >
               <item.icon className="h-4 w-4" />
@@ -159,7 +156,7 @@ export function Header({ onRefresh, isRefreshing }: HeaderProps) {
       </nav>
 
       {/* Right: Controls */}
-      <div className="flex items-center gap-2">
+      <div className="flex-1 flex items-center justify-end gap-2">
         {/* Refresh Button - using native title to avoid Radix tooltip cascade issues */}
         {/* Use isMounted to defer isRefreshing state and prevent hydration mismatch */}
         {onRefresh && (
@@ -180,6 +177,18 @@ export function Header({ onRefresh, isRefreshing }: HeaderProps) {
 
         {/* Mobile/Desktop Toggle */}
         <MobileToggle size="sm" />
+
+        {/* Settings Button */}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => router.push("/settings")}
+          className="group"
+          title="Settings"
+        >
+          <Settings className="h-5 w-5 transition-transform duration-300 group-hover:rotate-45" />
+          <span className="sr-only">Settings</span>
+        </Button>
 
         {/* Theme Toggle - only render after mount to avoid Radix hydration mismatch */}
         {isMounted && (
@@ -225,12 +234,10 @@ export function Header({ onRefresh, isRefreshing }: HeaderProps) {
                   if (profilePic) {
                     return (
                       <div className="relative h-8 w-8 rounded-full overflow-hidden">
-                        <Image
+                        <img
                           src={profilePic}
                           alt={`Profile picture of ${activeOwner?.name || "User"}`}
-                          fill
-                          className="object-cover object-[center_20%]"
-                          sizes="32px"
+                          className="absolute inset-0 w-full h-full object-cover object-[center_20%]"
                         />
                       </div>
                     );

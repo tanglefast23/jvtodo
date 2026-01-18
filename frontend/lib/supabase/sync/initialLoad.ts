@@ -1,0 +1,210 @@
+/**
+ * Initial Load Logic for Supabase Sync
+ *
+ * Implements cloud-as-source-of-truth pattern:
+ * - If cloud has data -> use cloud data
+ * - If cloud is empty AND local has data -> push local to cloud (recovery mode)
+ * - Never overwrite local data with empty cloud data
+ */
+
+import { fetchAllTasks, upsertTasks } from "@/lib/supabase/queries/tasks";
+import { fetchTags, syncTags } from "@/lib/supabase/queries/tags";
+import { fetchOwners, syncOwners } from "@/lib/supabase/queries/owners";
+import {
+  fetchAllPermissions,
+  upsertPermissions,
+} from "@/lib/supabase/queries/permissions";
+import { fetchRunningTab, upsertTab } from "@/lib/supabase/queries/runningTab";
+import { fetchAllExpenses, upsertExpenses } from "@/lib/supabase/queries/expenses";
+import { fetchTabHistory, upsertHistory } from "@/lib/supabase/queries/tabHistory";
+
+import { useTasksStore } from "@/stores/tasksStore";
+import { useTagsStore } from "@/stores/tagsStore";
+import { useOwnerStore } from "@/stores/ownerStore";
+import { usePermissionsStore } from "@/stores/permissionsStore";
+import { useRunningTabStore } from "@/stores/runningTabStore";
+
+import { retryWithBackoff } from "./utils";
+
+import type { Task } from "@/types/tasks";
+import type { Tag } from "@/types/dashboard";
+import type { Owner } from "@/types/owner";
+import type { AppPermissions, RunningTab, Expense, TabHistoryEntry } from "@/types/runningTab";
+
+/**
+ * Performs the initial load from Supabase, applying cloud-as-source-of-truth logic.
+ *
+ * For each data type:
+ * - If cloud has data: update local store with cloud data
+ * - If cloud is empty AND local has data: push local to cloud (recovery mode)
+ * - If both are empty: skip
+ */
+export async function performInitialLoad(): Promise<void> {
+  console.log("[Sync] Starting initial load from Supabase...");
+
+  // Fetch all data from Supabase in parallel with retry logic
+  const [
+    cloudTasks,
+    cloudTags,
+    cloudOwners,
+    cloudPermissions,
+    cloudRunningTab,
+    cloudExpenses,
+    cloudTabHistory,
+  ] = await Promise.all([
+    retryWithBackoff(() => fetchAllTasks(), 3, "fetchAllTasks"),
+    retryWithBackoff(() => fetchTags(), 3, "fetchTags"),
+    retryWithBackoff(() => fetchOwners(), 3, "fetchOwners"),
+    retryWithBackoff(() => fetchAllPermissions(), 3, "fetchAllPermissions"),
+    retryWithBackoff(() => fetchRunningTab(), 3, "fetchRunningTab"),
+    retryWithBackoff(() => fetchAllExpenses(), 3, "fetchAllExpenses"),
+    retryWithBackoff(() => fetchTabHistory(), 3, "fetchTabHistory"),
+  ]);
+
+  // Get local state from stores
+  const localTasks = useTasksStore.getState().tasks;
+  const localTags = useTagsStore.getState().tags;
+  const localOwners = useOwnerStore.getState().owners;
+  const localPermissions = usePermissionsStore.getState().permissions;
+  const localTab = useRunningTabStore.getState().tab;
+  const localExpenses = useRunningTabStore.getState().expenses;
+  const localHistory = useRunningTabStore.getState().history;
+
+  // Sync Tasks
+  await syncDataType<Task[]>({
+    name: "tasks",
+    cloudData: cloudTasks,
+    localData: localTasks,
+    hasCloudData: (data) => Array.isArray(data) && data.length > 0,
+    hasLocalData: (data) => Array.isArray(data) && data.length > 0,
+    updateLocal: (data) => useTasksStore.getState().setTasks(data),
+    pushToCloud: (data) => upsertTasks(data),
+  });
+
+  // Sync Tags
+  await syncDataType<Tag[]>({
+    name: "tags",
+    cloudData: cloudTags as Tag[] | undefined,
+    localData: localTags,
+    hasCloudData: (data) => Array.isArray(data) && data.length > 0,
+    hasLocalData: (data) => Array.isArray(data) && data.length > 0,
+    updateLocal: (data) => useTagsStore.getState().setTags(data),
+    pushToCloud: (data) => syncTags(data),
+  });
+
+  // Sync Owners
+  await syncDataType<Owner[]>({
+    name: "owners",
+    cloudData: cloudOwners as Owner[] | undefined,
+    localData: localOwners,
+    hasCloudData: (data) => Array.isArray(data) && data.length > 0,
+    hasLocalData: (data) => Array.isArray(data) && data.length > 0,
+    updateLocal: (data) => useOwnerStore.getState().setOwners(data),
+    pushToCloud: (data) => syncOwners(data),
+  });
+
+  // Sync Permissions (requires conversion between formats)
+  await syncPermissionsData(cloudPermissions, localPermissions);
+
+  // Sync Running Tab
+  await syncDataType<RunningTab | null>({
+    name: "runningTab",
+    cloudData: cloudRunningTab,
+    localData: localTab,
+    hasCloudData: (data) => data !== null && data !== undefined,
+    hasLocalData: (data) => data !== null && data !== undefined,
+    updateLocal: (data) => useRunningTabStore.getState().setTab(data),
+    pushToCloud: (data) => (data ? upsertTab(data) : Promise.resolve()),
+  });
+
+  // Sync Expenses
+  await syncDataType<Expense[]>({
+    name: "expenses",
+    cloudData: cloudExpenses,
+    localData: localExpenses,
+    hasCloudData: (data) => Array.isArray(data) && data.length > 0,
+    hasLocalData: (data) => Array.isArray(data) && data.length > 0,
+    updateLocal: (data) => useRunningTabStore.getState().setExpenses(data),
+    pushToCloud: (data) => upsertExpenses(data),
+  });
+
+  // Sync Tab History
+  await syncDataType<TabHistoryEntry[]>({
+    name: "tabHistory",
+    cloudData: cloudTabHistory,
+    localData: localHistory,
+    hasCloudData: (data) => Array.isArray(data) && data.length > 0,
+    hasLocalData: (data) => Array.isArray(data) && data.length > 0,
+    updateLocal: (data) => useRunningTabStore.getState().setHistory(data),
+    pushToCloud: (data) => upsertHistory(data),
+  });
+
+  console.log("[Sync] Initial load complete");
+}
+
+/**
+ * Generic sync logic for a data type
+ */
+interface SyncDataTypeConfig<T> {
+  name: string;
+  cloudData: T | undefined;
+  localData: T;
+  hasCloudData: (data: T | undefined) => boolean;
+  hasLocalData: (data: T) => boolean;
+  updateLocal: (data: T) => void;
+  pushToCloud: (data: T) => Promise<void>;
+}
+
+async function syncDataType<T>(config: SyncDataTypeConfig<T>): Promise<void> {
+  const { name, cloudData, localData, hasCloudData, hasLocalData, updateLocal, pushToCloud } =
+    config;
+
+  if (hasCloudData(cloudData)) {
+    // Cloud has data - use it as source of truth
+    updateLocal(cloudData as T);
+  } else if (hasLocalData(localData)) {
+    // Cloud is empty but local has data - recovery mode
+    console.log(`[Sync] Recovery: pushing local ${name} to cloud`);
+    try {
+      await pushToCloud(localData);
+    } catch (error) {
+      console.error(`[Sync] Failed to push local ${name} to cloud:`, error);
+    }
+  }
+  // If both are empty, skip
+}
+
+/**
+ * Special handling for permissions due to format conversion
+ *
+ * DB format: array of { id, owner_id, can_complete_tasks, can_approve_expenses, updated_at }
+ * Store format: Record<string, AppPermissions> where key is owner_id
+ */
+async function syncPermissionsData(
+  cloudPermissions: AppPermissions[] | undefined,
+  localPermissions: Record<string, AppPermissions>
+): Promise<void> {
+  const hasCloudData = Array.isArray(cloudPermissions) && cloudPermissions.length > 0;
+  const hasLocalData = Object.keys(localPermissions).length > 0;
+
+  if (hasCloudData) {
+    // Convert cloud array to local Record format
+    // Note: Query functions already return camelCase data (via rowToPermissions converter)
+    const permissionsRecord: Record<string, AppPermissions> = {};
+    for (const permission of cloudPermissions) {
+      permissionsRecord[permission.ownerId] = permission;
+    }
+    usePermissionsStore.getState().setPermissions(permissionsRecord);
+  } else if (hasLocalData) {
+    // Recovery mode: push local permissions to cloud
+    console.log("[Sync] Recovery: pushing local permissions to cloud");
+    try {
+      // Convert local Record to array for upsert
+      const permissionsArray = Object.values(localPermissions);
+      await upsertPermissions(permissionsArray);
+    } catch (error) {
+      console.error("[Sync] Failed to push local permissions to cloud:", error);
+    }
+  }
+  // If both are empty, skip
+}
