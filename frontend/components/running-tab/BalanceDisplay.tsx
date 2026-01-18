@@ -20,11 +20,10 @@ export function BalanceDisplay({ amount, className }: BalanceDisplayProps) {
   const isPositive = amount >= 0;
 
   return (
-    <div className={cn("text-center py-8", className)}>
-      <p className="text-sm text-muted-foreground mb-2">Current Balance</p>
+    <div className={cn("text-center py-6", className)}>
       <p
         className={cn(
-          "text-4xl md:text-5xl font-bold tracking-tight",
+          "text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold tracking-tight",
           isPositive ? "text-green-500" : "text-red-500"
         )}
       >

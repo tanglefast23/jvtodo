@@ -16,7 +16,21 @@ interface ExpenseItemProps {
   onApprove: (id: string) => void;
   onReject: (id: string) => void;
   onAttachment: (id: string, url: string) => void;
+  itemNumber?: number;
+  showNumber?: boolean;
 }
+
+// Rainbow gradient colors for item numbers
+const NUMBER_COLORS = [
+  "from-pink-500 to-rose-500",
+  "from-orange-500 to-amber-500",
+  "from-yellow-500 to-lime-500",
+  "from-green-500 to-emerald-500",
+  "from-teal-500 to-cyan-500",
+  "from-blue-500 to-indigo-500",
+  "from-violet-500 to-purple-500",
+  "from-fuchsia-500 to-pink-500",
+];
 
 const statusConfig: Record<
   ExpenseStatus,
@@ -46,12 +60,24 @@ export function ExpenseItem({
   onApprove,
   onReject,
   onAttachment,
+  itemNumber,
+  showNumber = false,
 }: ExpenseItemProps) {
   const config = statusConfig[expense.status];
   const isPending = expense.status === "pending";
+  const numberColor = itemNumber ? NUMBER_COLORS[(itemNumber - 1) % NUMBER_COLORS.length] : NUMBER_COLORS[0];
 
   return (
     <div className="flex items-start gap-4 p-4 rounded-lg border bg-card">
+      {/* Item Number */}
+      {showNumber && itemNumber && (
+        <div
+          className={`flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br ${numberColor} flex items-center justify-center text-white font-bold text-lg shadow-lg`}
+        >
+          {itemNumber}
+        </div>
+      )}
+
       {/* Main Content */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">

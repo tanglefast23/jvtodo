@@ -125,7 +125,7 @@ function ExpenseSection({
         {title} ({count})
       </h3>
       <div className="space-y-3">
-        {expenses.map((expense) => (
+        {expenses.map((expense, index) => (
           <ExpenseItem
             key={expense.id}
             expense={expense}
@@ -135,6 +135,8 @@ function ExpenseSection({
             onApprove={onApprove}
             onReject={onReject}
             onAttachment={onAttachment}
+            itemNumber={index + 1}
+            showNumber={count > 1}
           />
         ))}
       </div>

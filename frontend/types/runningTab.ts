@@ -27,7 +27,7 @@ export interface ExpenseWithOwner extends Expense {
   approverName?: string;
 }
 
-export type TabHistoryType = 'initial' | 'add' | 'expense_approved' | 'expense_rejected';
+export type TabHistoryType = 'initial' | 'add' | 'expense_approved' | 'expense_rejected' | 'adjustment';
 
 export interface TabHistoryEntry {
   id: string;

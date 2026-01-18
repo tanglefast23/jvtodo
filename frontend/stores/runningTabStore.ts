@@ -37,6 +37,7 @@ interface RunningTabState {
 
   // Tab management
   initializeBalance: (amount: number, initializedBy: string | null) => void;
+  adjustBalance: (newBalance: number, reason: string, adjustedBy: string | null) => void;
 
   // Expense CRUD
   addExpense: (name: string, amount: number, createdBy: string | null) => string;
@@ -93,6 +94,41 @@ export const useRunningTabStore = create<RunningTabState>()(
 
         set((state) => ({
           tab: newTab,
+          history: [historyEntry, ...state.history],
+        }));
+      },
+
+      adjustBalance: (newBalance, reason, adjustedBy) => {
+        const currentTab = get().tab;
+        if (!currentTab) return;
+
+        const now = new Date().toISOString();
+        const historyId = generateId();
+        const difference = newBalance - currentTab.currentBalance;
+
+        // Update balance
+        set((state) => ({
+          tab: state.tab
+            ? {
+                ...state.tab,
+                currentBalance: newBalance,
+                updatedAt: now,
+              }
+            : null,
+        }));
+
+        // Add history entry
+        const historyEntry: TabHistoryEntry = {
+          id: historyId,
+          type: "adjustment",
+          amount: difference,
+          description: reason || "Manual balance adjustment",
+          relatedExpenseId: null,
+          createdBy: adjustedBy,
+          createdAt: now,
+        };
+
+        set((state) => ({
           history: [historyEntry, ...state.history],
         }));
       },
