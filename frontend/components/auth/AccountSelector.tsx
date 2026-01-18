@@ -339,10 +339,10 @@ export function AccountSelector({ onLoginSuccess }: AccountSelectorProps) {
   const profilePicsForBg = Object.entries(PROFILE_PICTURES);
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-8 bg-gradient-to-br from-background via-background to-muted/30 overflow-hidden relative">
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 sm:p-6 md:p-8 bg-gradient-to-br from-background via-background to-muted/30 overflow-hidden relative">
       {/* Giant staggered profile pictures as background decoration */}
-      {/* Using vmin ensures images scale based on smaller viewport dimension (width or height) */}
-      <div className="absolute inset-0 pointer-events-none">
+      {/* Hidden on mobile for cleaner look, visible on larger screens */}
+      <div className="absolute inset-0 pointer-events-none hidden sm:block">
         {profilePicsForBg.map(([name, src], index) => {
           // Base size is 18vmin, but Leonard (index 4) is 1.4x larger and centered behind logo
           const baseSize = 18;
@@ -381,13 +381,13 @@ export function AccountSelector({ onLoginSuccess }: AccountSelectorProps) {
       </div>
 
       {/* Main content */}
-      <div className="relative z-10 flex flex-col items-center">
-        {/* App Logo - prominent display */}
-        <div className="mb-6 transform scale-[3.75] md:scale-[5]">
+      <div className="relative z-10 flex flex-col items-center w-full max-w-3xl">
+        {/* App Logo - prominent display, responsive scaling */}
+        <div className="mb-4 sm:mb-6 transform scale-[2] sm:scale-[2.5] md:scale-[3.5] lg:scale-[5]">
           <Logo size="lg" />
         </div>
 
-        <div className="flex flex-wrap justify-center gap-6 max-w-3xl mt-8">
+        <div className="flex flex-wrap justify-center gap-3 sm:gap-4 md:gap-6 w-full mt-6 sm:mt-8 px-2">
         {/* Owner accounts */}
         {sortedOwners.map((owner, index) => {
           const colors = getColorForOwner(index);
@@ -397,13 +397,13 @@ export function AccountSelector({ onLoginSuccess }: AccountSelectorProps) {
               key={owner.id}
               onClick={() => handleOwnerClick(owner)}
               onContextMenu={(e) => handleContextMenu(e, owner)}
-              className="group flex flex-col items-center gap-3 p-4 rounded-2xl transition-all duration-300 hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-primary/50"
+              className="group flex flex-col items-center gap-2 sm:gap-3 p-2 sm:p-4 rounded-2xl transition-all duration-300 hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-primary/50"
             >
               <div
                 className={cn(
-                  "relative w-24 h-24 rounded-full shadow-lg transition-transform duration-300 ease-out overflow-hidden",
+                  "relative w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full shadow-lg transition-transform duration-300 ease-out overflow-hidden",
                   !profilePic && colors.bg,
-                  "group-hover:scale-[1.3] group-hover:ring-4 group-hover:ring-offset-2 group-hover:ring-offset-background",
+                  "group-hover:scale-[1.15] sm:group-hover:scale-[1.3] group-hover:ring-4 group-hover:ring-offset-2 group-hover:ring-offset-background",
                   profilePic ? "ring-gray-300 dark:ring-gray-600" : colors.ring
                 )}
               >
@@ -414,20 +414,20 @@ export function AccountSelector({ onLoginSuccess }: AccountSelectorProps) {
                     className="w-full h-full object-cover object-[center_20%]"
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-white text-2xl font-bold">
+                  <div className="w-full h-full flex items-center justify-center text-white text-lg sm:text-xl md:text-2xl font-bold">
                     {getInitials(owner.name)}
                   </div>
                 )}
                 {owner.isMaster && (
-                  <div className="absolute -bottom-1 -right-1 bg-amber-500 rounded-full p-1.5 shadow-md z-10">
-                    <ShieldCheck className="h-4 w-4 text-white" />
+                  <div className="absolute -bottom-0.5 -right-0.5 sm:-bottom-1 sm:-right-1 bg-amber-500 rounded-full p-1 sm:p-1.5 shadow-md z-10">
+                    <ShieldCheck className="h-3 w-3 sm:h-4 sm:w-4 text-white" />
                   </div>
                 )}
               </div>
-              <div className="text-center transition-transform duration-300 ease-out group-hover:scale-[1.6]">
-                <p className="font-semibold text-foreground">{owner.name}</p>
+              <div className="text-center transition-transform duration-300 ease-out group-hover:scale-[1.3] sm:group-hover:scale-[1.6]">
+                <p className="font-semibold text-foreground text-sm sm:text-base">{owner.name}</p>
                 {owner.isMaster && (
-                  <p className="text-xs text-amber-600 dark:text-amber-400">Master</p>
+                  <p className="text-[10px] sm:text-xs text-amber-600 dark:text-amber-400">Master</p>
                 )}
               </div>
             </button>
@@ -440,14 +440,14 @@ export function AccountSelector({ onLoginSuccess }: AccountSelectorProps) {
             playSelectionChime();
             setIsCreateOpen(true);
           }}
-          className="group flex flex-col items-center gap-3 p-4 rounded-2xl transition-all duration-300 hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-primary/50"
+          className="group flex flex-col items-center gap-2 sm:gap-3 p-2 sm:p-4 rounded-2xl transition-all duration-300 hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-primary/50"
         >
-          <div className="w-24 h-24 rounded-full flex items-center justify-center bg-primary/10 border-2 border-dashed border-primary/30 text-primary transition-transform duration-300 ease-out group-hover:scale-[1.3] group-hover:ring-4 group-hover:ring-offset-2 group-hover:ring-offset-background group-hover:ring-primary/30 group-hover:bg-primary/20">
-            <Plus className="h-10 w-10" />
+          <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full flex items-center justify-center bg-primary/10 border-2 border-dashed border-primary/30 text-primary transition-transform duration-300 ease-out group-hover:scale-[1.15] sm:group-hover:scale-[1.3] group-hover:ring-4 group-hover:ring-offset-2 group-hover:ring-offset-background group-hover:ring-primary/30 group-hover:bg-primary/20">
+            <Plus className="h-6 w-6 sm:h-8 sm:h-8 md:h-10 md:w-10" />
           </div>
-          <div className="text-center transition-transform duration-300 ease-out group-hover:scale-[1.6]">
-            <p className="font-semibold text-primary">Create New</p>
-            <p className="text-xs text-primary/70">Add account</p>
+          <div className="text-center transition-transform duration-300 ease-out group-hover:scale-[1.3] sm:group-hover:scale-[1.6]">
+            <p className="font-semibold text-primary text-sm sm:text-base">Create New</p>
+            <p className="text-[10px] sm:text-xs text-primary/70">Add account</p>
           </div>
         </button>
         </div>
