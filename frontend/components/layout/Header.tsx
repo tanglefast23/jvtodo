@@ -37,6 +37,7 @@ const PROFILE_PICTURES: Record<string, string> = {
   foad: "/foad.png",
   ivy: "/ivy.png",
   leonard: "/leonard.png",
+  thanh: "/thanh.png",
 };
 
 // Get profile picture path for a name, or null if not found

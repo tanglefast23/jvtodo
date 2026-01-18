@@ -1,28 +1,55 @@
 "use client";
 
+import { useState } from "react";
 import { useOwnerStore } from "@/stores/ownerStore";
 import { usePermissionsStore } from "@/stores/permissionsStore";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { CreatorAvatar } from "@/components/tasks/CreatorAvatar";
-import { Shield, CheckCircle, Wallet } from "lucide-react";
+import { Shield, CheckCircle, Wallet, Trash2 } from "lucide-react";
 
 export function PermissionsSettings() {
   const owners = useOwnerStore((state) => state.owners);
   const setOwnerMaster = useOwnerStore((state) => state.setOwnerMaster);
+  const removeOwner = useOwnerStore((state) => state.removeOwner);
   const getActiveOwnerId = useOwnerStore((state) => state.getActiveOwnerId);
   const isMasterLoggedIn = useOwnerStore((state) => state.isMasterLoggedIn);
   const permissions = usePermissionsStore((state) => state.permissions);
   const setCanApproveExpenses = usePermissionsStore((state) => state.setCanApproveExpenses);
   const initializePermissions = usePermissionsStore((state) => state.initializePermissions);
 
+  // Delete user state
+  const [deleteUserId, setDeleteUserId] = useState<string | null>(null);
+  const [deleteUserName, setDeleteUserName] = useState<string>("");
+
   const currentUserId = getActiveOwnerId();
   const isAdmin = isMasterLoggedIn();
 
   // Check if there are any admins at all (bootstrap case)
   const hasAnyAdmin = owners.some((owner) => owner.isMaster);
+
+  // Handle delete user
+  const handleDeleteClick = (userId: string, userName: string) => {
+    setDeleteUserId(userId);
+    setDeleteUserName(userName);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (deleteUserId) {
+      removeOwner(deleteUserId);
+      setDeleteUserId(null);
+      setDeleteUserName("");
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteUserId(null);
+    setDeleteUserName("");
+  };
 
   // Ensure permissions exist for all non-master users
   owners.forEach((owner) => {
@@ -87,6 +114,17 @@ export function PermissionsSettings() {
                     </div>
                   </div>
                 </div>
+                {/* Delete button - only for admins, can't delete self or other admins */}
+                {isAdmin && !isCurrentUser && !owner.isMaster && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                    onClick={() => handleDeleteClick(owner.id, owner.name)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                )}
               </div>
 
               {/* Permissions summary / controls */}
@@ -173,6 +211,18 @@ export function PermissionsSettings() {
           );
         })}
       </CardContent>
+
+      {/* Delete User Confirmation Dialog */}
+      <ConfirmDialog
+        open={deleteUserId !== null}
+        onOpenChange={(open) => !open && handleDeleteCancel()}
+        title="Delete User"
+        description={`Are you sure you want to delete "${deleteUserName}"? This will permanently remove their account. Any tasks or expenses they created will remain but show them as the creator.`}
+        confirmLabel="Delete User"
+        cancelLabel="Cancel"
+        onConfirm={handleDeleteConfirm}
+        variant="destructive"
+      />
     </Card>
   );
 }
