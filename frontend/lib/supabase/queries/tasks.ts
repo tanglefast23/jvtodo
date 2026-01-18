@@ -20,6 +20,7 @@ function rowToTask(row: TaskRow): Task {
     completedBy: row.completed_by,
     completedAt: row.completed_at,
     status: row.status,
+    attachmentUrl: row.attachment_url,
     updatedAt: row.updated_at,
   };
 }
@@ -35,6 +36,7 @@ function taskToInsert(task: Omit<Task, "id"> & { id?: string }): TaskInsert {
     completed_by: task.completedBy,
     completed_at: task.completedAt,
     status: task.status,
+    attachment_url: task.attachmentUrl,
     updated_at: task.updatedAt,
   };
 }
@@ -48,6 +50,7 @@ function taskToUpdate(task: Partial<Task>): TaskUpdate {
   if (task.completedBy !== undefined) update.completed_by = task.completedBy;
   if (task.completedAt !== undefined) update.completed_at = task.completedAt;
   if (task.status !== undefined) update.status = task.status;
+  if (task.attachmentUrl !== undefined) update.attachment_url = task.attachmentUrl;
   if (task.updatedAt !== undefined) update.updated_at = task.updatedAt;
   return update;
 }

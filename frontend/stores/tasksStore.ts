@@ -11,6 +11,7 @@ import {
   updateTask,
   deleteTask as deleteTaskFromSupabase,
 } from "@/lib/supabase/queries/tasks";
+import { deleteAttachment } from "@/lib/supabase/queries/storage";
 
 const TASKS_STORAGE_KEY = "tasks-storage";
 
@@ -37,6 +38,10 @@ interface TasksState {
   uncompleteTask: (id: string) => void;
   deleteTask: (id: string) => void;
 
+  // Attachment management
+  setTaskAttachment: (taskId: string, url: string) => void;
+  clearTaskAttachment: (taskId: string) => void;
+
   // Getters
   getPendingTasks: () => Task[];
   getCompletedTasks: () => Task[];
@@ -62,6 +67,7 @@ export const useTasksStore = create<TasksState>()(
           completedBy: null,
           completedAt: null,
           status: "pending",
+          attachmentUrl: null,
           updatedAt: now,
         };
 
@@ -139,6 +145,55 @@ export const useTasksStore = create<TasksState>()(
         // Sync to Supabase for cross-device sync
         deleteTaskFromSupabase(id).catch((error) => {
           console.error("[Store] Failed to sync task deletion to Supabase:", error);
+        });
+      },
+
+      setTaskAttachment: (taskId, url) => {
+        const now = new Date().toISOString();
+        set((state) => ({
+          tasks: state.tasks.map((task) =>
+            task.id === taskId
+              ? { ...task, attachmentUrl: url, updatedAt: now }
+              : task
+          ),
+        }));
+
+        // Sync to Supabase for cross-device sync
+        updateTask(taskId, {
+          attachmentUrl: url,
+          updatedAt: now,
+        }).catch((error) => {
+          console.error("[Store] Failed to sync task attachment to Supabase:", error);
+        });
+      },
+
+      clearTaskAttachment: (taskId) => {
+        const task = get().tasks.find((t) => t.id === taskId);
+        if (!task?.attachmentUrl) return;
+
+        const oldUrl = task.attachmentUrl;
+        const now = new Date().toISOString();
+
+        // Update local state
+        set((state) => ({
+          tasks: state.tasks.map((t) =>
+            t.id === taskId
+              ? { ...t, attachmentUrl: null, updatedAt: now }
+              : t
+          ),
+        }));
+
+        // Delete from Supabase Storage
+        deleteAttachment(oldUrl).catch((error) => {
+          console.error("[Store] Failed to delete task attachment from Storage:", error);
+        });
+
+        // Sync to Supabase for cross-device sync
+        updateTask(taskId, {
+          attachmentUrl: null,
+          updatedAt: now,
+        }).catch((error) => {
+          console.error("[Store] Failed to sync task attachment removal to Supabase:", error);
         });
       },
 

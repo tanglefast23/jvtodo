@@ -515,6 +515,7 @@ export interface Database {
           completed_by: string | null;
           completed_at: string | null;
           status: "pending" | "completed";
+          attachment_url: string | null;
           updated_at: string;
         };
         Insert: {
@@ -526,6 +527,7 @@ export interface Database {
           completed_by?: string | null;
           completed_at?: string | null;
           status?: "pending" | "completed";
+          attachment_url?: string | null;
           updated_at?: string;
         };
         Update: {
@@ -537,6 +539,7 @@ export interface Database {
           completed_by?: string | null;
           completed_at?: string | null;
           status?: "pending" | "completed";
+          attachment_url?: string | null;
           updated_at?: string;
         };
       };

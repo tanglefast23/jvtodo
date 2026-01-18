@@ -10,6 +10,7 @@ export interface Task {
   completedBy: string | null;
   completedAt: string | null;
   status: TaskStatus;
+  attachmentUrl: string | null;
   updatedAt: string;
 }
 

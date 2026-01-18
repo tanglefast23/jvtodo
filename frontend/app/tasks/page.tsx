@@ -16,6 +16,8 @@ export default function TasksPage() {
   const completeTask = useTasksStore((state) => state.completeTask);
   const uncompleteTask = useTasksStore((state) => state.uncompleteTask);
   const deleteTask = useTasksStore((state) => state.deleteTask);
+  const setTaskAttachment = useTasksStore((state) => state.setTaskAttachment);
+  const clearTaskAttachment = useTasksStore((state) => state.clearTaskAttachment);
 
   // Owner state
   const owners = useOwnerStore((state) => state.owners);
@@ -54,6 +56,16 @@ export default function TasksPage() {
     deleteTask(id);
   }, [deleteTask]);
 
+  // Handle adding attachment to a task
+  const handleAttachment = useCallback((taskId: string, url: string) => {
+    setTaskAttachment(taskId, url);
+  }, [setTaskAttachment]);
+
+  // Handle clearing attachment from a task
+  const handleClearAttachment = useCallback((taskId: string) => {
+    clearTaskAttachment(taskId);
+  }, [clearTaskAttachment]);
+
   // Show loading state while checking authentication
   if (isAuthLoading || !isAuthenticated) {
     return (
@@ -78,8 +90,11 @@ export default function TasksPage() {
             onComplete={handleComplete}
             onUncomplete={handleUncomplete}
             onDelete={handleDelete}
+            onAttachment={handleAttachment}
+            onClearAttachment={handleClearAttachment}
             canComplete={true}
             canDelete={isMaster}
+            isMaster={isMaster}
           />
         </div>
       </main>

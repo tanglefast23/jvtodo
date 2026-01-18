@@ -10,8 +10,11 @@ interface TaskListProps {
   onComplete: (id: string) => void;
   onUncomplete: (id: string) => void;
   onDelete: (id: string) => void;
+  onAttachment?: (taskId: string, url: string) => void;
+  onClearAttachment?: (taskId: string) => void;
   canComplete: boolean;
   canDelete?: boolean;
+  isMaster?: boolean;
 }
 
 export function TaskList({
@@ -20,8 +23,11 @@ export function TaskList({
   onComplete,
   onUncomplete,
   onDelete,
+  onAttachment,
+  onClearAttachment,
   canComplete,
   canDelete = false,
+  isMaster = false,
 }: TaskListProps) {
   // Separate tasks by status and priority
   const { normalTasks, urgentTasks, completedTasks } = useMemo(() => {
@@ -84,8 +90,11 @@ export function TaskList({
                     onComplete={onComplete}
                     onUncomplete={onUncomplete}
                     onDelete={onDelete}
+                    onAttachment={onAttachment}
+                    onClearAttachment={onClearAttachment}
                     canComplete={canComplete}
                     canDelete={canDelete}
+                    isMaster={isMaster}
                   />
                 ))}
               </div>
@@ -110,8 +119,11 @@ export function TaskList({
                     onComplete={onComplete}
                     onUncomplete={onUncomplete}
                     onDelete={onDelete}
+                    onAttachment={onAttachment}
+                    onClearAttachment={onClearAttachment}
                     canComplete={canComplete}
                     canDelete={canDelete}
+                    isMaster={isMaster}
                   />
                 ))}
               </div>
@@ -143,8 +155,11 @@ export function TaskList({
                 onComplete={onComplete}
                 onUncomplete={onUncomplete}
                 onDelete={onDelete}
+                onAttachment={onAttachment}
+                onClearAttachment={onClearAttachment}
                 canComplete={canComplete}
                 canDelete={canDelete}
+                isMaster={isMaster}
               />
             ))}
           </div>
