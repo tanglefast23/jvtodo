@@ -185,6 +185,7 @@ interface OwnerState {
     currentPassword: string,
     newPassword: string
   ) => Promise<boolean>;
+  setOwnerPassword: (id: string, newPassword: string) => Promise<void>;
 
   // Session login (new approach - single active user)
   getActiveOwnerId: () => string | null;
@@ -296,6 +297,16 @@ export const useOwnerStore = create<OwnerState>()(
           ),
         }));
         return true;
+      },
+
+      // Set password directly (used when promoting passwordless user to admin)
+      setOwnerPassword: async (id, newPassword) => {
+        const newHash = await hashPassword(newPassword);
+        set((state) => ({
+          owners: state.owners.map((o) =>
+            o.id === id ? { ...o, passwordHash: newHash } : o
+          ),
+        }));
       },
 
       // Session login functions

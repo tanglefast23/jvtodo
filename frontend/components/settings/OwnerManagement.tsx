@@ -43,6 +43,7 @@ export function OwnerManagement() {
     updateOwnerName,
     setOwnerMaster,
     changeOwnerPassword,
+    setOwnerPassword,
     isOwnerUnlocked,
     unlockOwner,
     lockOwner,
@@ -80,6 +81,13 @@ export function OwnerManagement() {
   const [unlockPassword, setUnlockPassword] = useState("");
   const [showUnlockPassword, setShowUnlockPassword] = useState(false);
   const [unlockError, setUnlockError] = useState<string | null>(null);
+
+  // Promote to admin dialog state (for passwordless users)
+  const [promoteOwnerTarget, setPromoteOwnerTarget] = useState<{ id: string; name: string } | null>(null);
+  const [promotePassword, setPromotePassword] = useState("");
+  const [promoteConfirmPassword, setPromoteConfirmPassword] = useState("");
+  const [showPromotePassword, setShowPromotePassword] = useState(false);
+  const [promoteError, setPromoteError] = useState<string | null>(null);
 
   const handleAddOwner = useCallback(async () => {
     if (!newOwnerName.trim()) {
@@ -195,6 +203,54 @@ export function OwnerManagement() {
     setUnlockOwnerTarget(null);
   }, [unlockOwnerTarget, unlockPassword, unlockOwner, checkRateLimit]);
 
+  const handleMasterToggle = useCallback((owner: { id: string; name: string; isMaster?: boolean; passwordHash?: string }) => {
+    if (owner.isMaster) {
+      // Demoting from admin - no password needed
+      setOwnerMaster(owner.id, false);
+    } else {
+      // Promoting to admin - check if they need a password
+      const hasPassword = owner.passwordHash && owner.passwordHash !== "";
+      if (hasPassword) {
+        // Already has a password, just promote
+        setOwnerMaster(owner.id, true);
+      } else {
+        // Needs a password - show dialog
+        setPromoteOwnerTarget({ id: owner.id, name: owner.name });
+        setPromotePassword("");
+        setPromoteConfirmPassword("");
+        setPromoteError(null);
+      }
+    }
+  }, [setOwnerMaster]);
+
+  const handlePromoteWithPassword = useCallback(async () => {
+    if (!promoteOwnerTarget) return;
+
+    if (!promotePassword) {
+      setPromoteError("Please enter a password");
+      return;
+    }
+    if (promotePassword !== promoteConfirmPassword) {
+      setPromoteError("Passwords do not match");
+      return;
+    }
+    if (promotePassword.length < 4) {
+      setPromoteError("Password must be at least 4 characters");
+      return;
+    }
+
+    // Set the password and make them admin
+    await setOwnerPassword(promoteOwnerTarget.id, promotePassword);
+    setOwnerMaster(promoteOwnerTarget.id, true);
+
+    // Reset form
+    setPromotePassword("");
+    setPromoteConfirmPassword("");
+    setShowPromotePassword(false);
+    setPromoteError(null);
+    setPromoteOwnerTarget(null);
+  }, [promoteOwnerTarget, promotePassword, promoteConfirmPassword, setOwnerPassword, setOwnerMaster]);
+
   return (
     <Card>
       <CardHeader>
@@ -305,7 +361,7 @@ export function OwnerManagement() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => setOwnerMaster(owner.id, !owner.isMaster)}
+                        onClick={() => handleMasterToggle(owner)}
                         title={owner.isMaster ? "Remove master access" : "Grant master access"}
                         className={cn("h-8 w-8 p-0", owner.isMaster && "text-amber-500")}
                       >
@@ -646,6 +702,87 @@ export function OwnerManagement() {
               </Button>
               <Button onClick={handleUnlockOwner}>
                 Unlock
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Promote to Admin Password Dialog */}
+        <Dialog open={!!promoteOwnerTarget} onOpenChange={(open) => {
+          if (!open) {
+            setPromoteOwnerTarget(null);
+            setPromotePassword("");
+            setPromoteConfirmPassword("");
+            setPromoteError(null);
+            setShowPromotePassword(false);
+          }
+        }}>
+          <DialogContent className="sm:max-w-[400px]">
+            <DialogHeader>
+              <DialogTitle>Set Password for {promoteOwnerTarget?.name}</DialogTitle>
+              <DialogDescription>
+                Admin accounts require a password. Please create a password for this user.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="promote-password">Password</Label>
+                <div className="relative">
+                  <Input
+                    id="promote-password"
+                    type={showPromotePassword ? "text" : "password"}
+                    value={promotePassword}
+                    onChange={(e) => {
+                      setPromotePassword(e.target.value);
+                      setPromoteError(null);
+                    }}
+                    placeholder="Enter password"
+                    autoFocus
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPromotePassword(!showPromotePassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    tabIndex={-1}
+                    aria-label={showPromotePassword ? "Hide password" : "Show password"}
+                  >
+                    {showPromotePassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="promote-confirm-password">Confirm Password</Label>
+                <Input
+                  id="promote-confirm-password"
+                  type={showPromotePassword ? "text" : "password"}
+                  value={promoteConfirmPassword}
+                  onChange={(e) => {
+                    setPromoteConfirmPassword(e.target.value);
+                    setPromoteError(null);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handlePromoteWithPassword();
+                    }
+                  }}
+                  placeholder="Confirm password"
+                />
+              </div>
+
+              {promoteError && (
+                <p className="text-sm text-destructive">{promoteError}</p>
+              )}
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setPromoteOwnerTarget(null)}>
+                Cancel
+              </Button>
+              <Button onClick={handlePromoteWithPassword}>
+                Set Password & Promote
               </Button>
             </DialogFooter>
           </DialogContent>
