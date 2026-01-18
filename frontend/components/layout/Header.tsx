@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LogOut, Moon, RefreshCw, Sun, User, ShieldCheck, Settings, Table2, Calculator } from "lucide-react";
+import { LogOut, Moon, RefreshCw, Sun, User, ShieldCheck, Settings, Table2, DollarSign } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useRouter } from "next/navigation";
 
@@ -25,7 +25,7 @@ import { cn } from "@/lib/utils";
 // Navigation items for the header (Settings moved to right side as icon)
 const navItems = [
   { title: "Tasks", href: "/tasks", icon: Table2 },
-  { title: "Running Tab", href: "/running-tab", icon: Calculator },
+  { title: "Running Tab", href: "/running-tab", icon: DollarSign },
 ];
 
 // Profile pictures for known users (case-insensitive match)
