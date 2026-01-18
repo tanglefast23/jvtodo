@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Plus, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,6 +26,11 @@ export function AddExpenseModal({
 }: AddExpenseModalProps) {
   const [open, setOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("simple");
+
+  // Refs for keyboard navigation
+  const nameInputRef = useRef<HTMLInputElement>(null);
+  const amountInputRef = useRef<HTMLInputElement>(null);
+  const bulkTextareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Simple form state
   const [name, setName] = useState("");
@@ -84,8 +89,56 @@ export function AddExpenseModal({
     }
   };
 
+  // Handle Enter key on name field - move to amount field
+  const handleNameKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      amountInputRef.current?.focus();
+    }
+  };
+
+  // Focus name input when dialog opens
+  const handleOpenChange = (isOpen: boolean) => {
+    setOpen(isOpen);
+    if (isOpen) {
+      // Small delay to ensure dialog is rendered
+      setTimeout(() => {
+        if (activeTab === "simple") {
+          nameInputRef.current?.focus();
+        } else {
+          bulkTextareaRef.current?.focus();
+        }
+      }, 50);
+    }
+  };
+
+  // Handle tab change - focus appropriate input
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    setTimeout(() => {
+      if (tab === "simple") {
+        nameInputRef.current?.focus();
+      } else {
+        bulkTextareaRef.current?.focus();
+      }
+    }, 50);
+  };
+
+  // Handle Enter key on bulk textarea - submit form
+  const handleBulkKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      const entries = parseBulkInputSafe(bulkText);
+      if (entries.length > 0) {
+        onAddBulkExpenses(entries);
+        resetForm();
+        setOpen(false);
+      }
+    }
+  };
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button>
           <Plus className="mr-2 h-4 w-4" />
@@ -101,7 +154,7 @@ export function AddExpenseModal({
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <Tabs value={activeTab} onValueChange={handleTabChange}>
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="simple">Simple</TabsTrigger>
             <TabsTrigger value="bulk">Bulk</TabsTrigger>
@@ -133,9 +186,11 @@ export function AddExpenseModal({
               <div>
                 <label className="text-sm font-medium">Expense Name</label>
                 <Input
+                  ref={nameInputRef}
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
+                  onKeyDown={handleNameKeyDown}
                   placeholder="e.g., Coffee, Lunch, Groceries"
                   className="mt-1"
                 />
@@ -143,7 +198,9 @@ export function AddExpenseModal({
               <div>
                 <label className="text-sm font-medium">Amount (VND)</label>
                 <Input
+                  ref={amountInputRef}
                   type="text"
+                  inputMode="numeric"
                   value={amount}
                   onChange={handleAmountChange}
                   placeholder="50,000"
@@ -173,8 +230,10 @@ export function AddExpenseModal({
                   Format: Name, Amount, Name, Amount, ...
                 </p>
                 <textarea
+                  ref={bulkTextareaRef}
                   value={bulkText}
                   onChange={(e) => setBulkText(e.target.value)}
+                  onKeyDown={handleBulkKeyDown}
                   placeholder="Coffee, 50000, Lunch, 120000, Snacks, 30000"
                   className="flex min-h-[120px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                 />
