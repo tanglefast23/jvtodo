@@ -33,8 +33,8 @@ export function BalanceDisplay({ amount, className, canEdit, onEdit }: BalanceDi
         className={cn(
           "text-5xl sm:text-6xl md:text-7xl font-bold tracking-tight select-none",
           isPositive
-            ? "text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-green-500 to-teal-400"
-            : "text-transparent bg-clip-text bg-gradient-to-r from-red-400 via-rose-500 to-pink-500",
+            ? "text-emerald-400 bg-clip-text bg-gradient-to-r from-emerald-400 via-green-500 to-teal-400 [-webkit-background-clip:text] [-webkit-text-fill-color:transparent]"
+            : "text-red-400 bg-clip-text bg-gradient-to-r from-red-400 via-rose-500 to-pink-500 [-webkit-background-clip:text] [-webkit-text-fill-color:transparent]",
           canEdit && "cursor-pointer hover:opacity-80 active:opacity-60 transition-opacity"
         )}
         onDoubleClick={handleDoubleClick}
