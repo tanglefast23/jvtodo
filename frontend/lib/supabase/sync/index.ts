@@ -25,6 +25,7 @@ export {
   createSyncRunningTabToSupabase,
   createSyncExpensesToSupabase,
   createSyncTabHistoryToSupabase,
+  createSyncScheduledEventsToSupabase,
 } from "./syncFunctions";
 
 // Initial load

@@ -17,6 +17,7 @@ import { useTagsStore } from "@/stores/tagsStore";
 import { useOwnerStore } from "@/stores/ownerStore";
 import { usePermissionsStore } from "@/stores/permissionsStore";
 import { useRunningTabStore } from "@/stores/runningTabStore";
+import { useScheduledEventsStore } from "@/stores/scheduledEventsStore";
 
 // Sync functions
 import {
@@ -28,6 +29,7 @@ import {
   createSyncRunningTabToSupabase,
   createSyncExpensesToSupabase,
   createSyncTabHistoryToSupabase,
+  createSyncScheduledEventsToSupabase,
   flushAllPendingSyncs,
   type SyncStateRefs,
 } from "@/lib/supabase/sync";
@@ -56,6 +58,7 @@ export function useSupabaseSync(): void {
   const syncRunningTab = useRef(createSyncRunningTabToSupabase(refs));
   const syncExpenses = useRef(createSyncExpensesToSupabase(refs));
   const syncTabHistory = useRef(createSyncTabHistoryToSupabase(refs));
+  const syncScheduledEvents = useRef(createSyncScheduledEventsToSupabase(refs));
 
   // Subscribe to store changes
   const tasks = useTasksStore((state) => state.tasks);
@@ -65,6 +68,7 @@ export function useSupabaseSync(): void {
   const tab = useRunningTabStore((state) => state.tab);
   const expenses = useRunningTabStore((state) => state.expenses);
   const history = useRunningTabStore((state) => state.history);
+  const scheduledEvents = useScheduledEventsStore((state) => state.events);
 
   // Perform initial load on mount
   useEffect(() => {
@@ -162,4 +166,12 @@ export function useSupabaseSync(): void {
     if (!initialLoadComplete.current) return;
     syncTabHistory.current(history);
   }, [history]);
+
+  // Sync scheduled events when they change
+  // Note: Individual actions (add, complete, delete) also sync directly to Supabase.
+  // This provides retry logic and ensures changes aren't lost if individual syncs fail.
+  useEffect(() => {
+    if (!initialLoadComplete.current) return;
+    syncScheduledEvents.current(scheduledEvents);
+  }, [scheduledEvents]);
 }

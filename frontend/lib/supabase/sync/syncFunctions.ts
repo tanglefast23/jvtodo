@@ -15,12 +15,14 @@ import { upsertPermissions } from "@/lib/supabase/queries/permissions";
 import { upsertTab } from "@/lib/supabase/queries/runningTab";
 import { upsertExpenses } from "@/lib/supabase/queries/expenses";
 import { upsertHistory } from "@/lib/supabase/queries/tabHistory";
+import { upsertScheduledEvents } from "@/lib/supabase/queries/scheduled-events";
 
 // Type imports
 import type { Task } from "@/types/tasks";
 import type { Tag } from "@/types/dashboard";
 import type { Owner } from "@/types/owner";
 import type { AppPermissions, RunningTab, Expense, TabHistoryEntry } from "@/types/runningTab";
+import type { ScheduledEvent } from "@/types/scheduled-events";
 
 /**
  * Creates a debounced sync function for tasks.
@@ -156,6 +158,23 @@ export function createSyncTabHistoryToSupabase(refs: SyncStateRefs) {
     try {
       console.log("[Sync] Syncing tab history to Supabase...");
       await retryWithBackoff(() => upsertHistory(history), 3, "tab history sync");
+    } finally {
+      refs.isSyncing.current = false;
+    }
+  }, 1000);
+}
+
+/**
+ * Creates a debounced sync function for scheduled events.
+ * Uses upsertScheduledEvents to sync all events to Supabase.
+ */
+export function createSyncScheduledEventsToSupabase(refs: SyncStateRefs) {
+  return debounce(async (events: ScheduledEvent[]) => {
+    if (refs.isSyncing.current || refs.isInitialLoad.current) return;
+    refs.isSyncing.current = true;
+    try {
+      console.log("[Sync] Syncing scheduled events to Supabase...");
+      await retryWithBackoff(() => upsertScheduledEvents(events), 3, "scheduled events sync");
     } finally {
       refs.isSyncing.current = false;
     }
