@@ -20,7 +20,8 @@ interface ScheduledEventListProps {
   onUncomplete: (id: string) => void;
   onDelete: (id: string) => void;
   canComplete: boolean;
-  canDelete?: boolean;
+  isMaster: boolean;
+  activeOwnerId: string | null;
 }
 
 interface EventsByDay {
@@ -65,7 +66,8 @@ export function ScheduledEventList({
   onUncomplete,
   onDelete,
   canComplete,
-  canDelete = false,
+  isMaster,
+  activeOwnerId,
 }: ScheduledEventListProps) {
   // Separate, sort, and group events by day
   const { pendingByDay, completedByDay } = useMemo(() => {
@@ -120,7 +122,7 @@ export function ScheduledEventList({
                     onUncomplete={onUncomplete}
                     onDelete={onDelete}
                     canComplete={canComplete}
-                    canDelete={canDelete}
+                    canDelete={isMaster || event.createdBy === activeOwnerId}
                   />
                 ))}
               </div>
@@ -154,7 +156,7 @@ export function ScheduledEventList({
                     onUncomplete={onUncomplete}
                     onDelete={onDelete}
                     canComplete={canComplete}
-                    canDelete={canDelete}
+                    canDelete={isMaster || event.createdBy === activeOwnerId}
                   />
                 ))}
               </div>

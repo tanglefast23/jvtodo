@@ -87,7 +87,8 @@ export default function CalendarPage() {
             onUncomplete={handleUncomplete}
             onDelete={handleDelete}
             canComplete={true}
-            canDelete={isMaster}
+            isMaster={isMaster}
+            activeOwnerId={activeOwnerId}
           />
         </div>
       </main>
